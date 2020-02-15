@@ -8,7 +8,7 @@ verify_ssl = true
 [packages]
 basketball-reference-scraper = "==v1.0.4"
 scikit-learn = "*"
-tensorflow = "*"
+tensorflow = "==2.0"
 
 [requires]
 python_version = "3.7"

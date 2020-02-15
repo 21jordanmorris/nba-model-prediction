@@ -37,3 +37,35 @@ def getTeamMisc(year):
 
     frames = [atl,brk,bos,cho,chi,cle,dal,den,det,gsw,hou,ind,lac,lal,mem,mia,mil,mint,nop,nyk,okc,orl,phi,pho,por,sac,sas,tor,uta,was]
     return pd.concat(frames)
+
+def get_next_day(day):
+    if day == "Monday":
+        return "Tuesday"
+    elif day == "Tuesday":
+        return "Wednesday"
+    elif day == "Wednesday":
+        return "Thursday"
+    elif day == "Thursday":
+        return "Friday"
+    elif day == "Friday":
+        return "Saturday"
+    elif day == "Saturday":
+        return "Sunday"
+    elif day == "Sunday":
+        return "Monday"
+
+def get_day_before(day):
+    if day == "Monday":
+        return "Sunday"
+    elif day == "Tuesday":
+        return "Monday"
+    elif day == "Wednesday":
+        return "Tuesday"
+    elif day == "Thursday":
+        return "Wednesday"
+    elif day == "Friday":
+        return "Thursday"
+    elif day == "Saturday":
+        return "Friday"
+    elif day == "Sunday":
+        return "Saturday"

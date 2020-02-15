@@ -66,7 +66,7 @@ def add_winner_column(entire_schedule):
             winner.insert(index, 1)
         else:
             winner.insert(index, 0)
-    entire_schedule.insert(5, "WINNER", winner, True)
+    entire_schedule["WINNER"] = winner
     return entire_schedule
 
 def add_team_stats(entire_schedule):
@@ -100,8 +100,10 @@ def add_team_stats(entire_schedule):
     home_team_stats = home_team_stats.reset_index(drop=True)
     visitor_team_stats = visitor_team_stats.reset_index(drop=True)
     entire_schedule = pd.concat([entire_schedule, home_team_stats, visitor_team_stats], axis=1, sort=True)
-    entire_schedule.insert(10, "HOME_LAST_SEASON_W%", last_year_win_percentage_home, True)
-    entire_schedule.insert(11, "VISITOR_LAST_SEASON_W%", last_year_win_percentage_visitor, True)
+    entire_schedule["HOME_LAST_SEASON_W%"] = last_year_win_percentage_home
+    entire_schedule["VISITOR_LAST_SEASON_W%"] = last_year_win_percentage_visitor
+    entire_schedule["HOME_GAME"] = [1] * len(entire_schedule)
+    entire_schedule["AWAY GAME"] = [0] * len(entire_schedule)
     return entire_schedule
 
 def add_win_percentage(entire_schedule):
@@ -146,15 +148,95 @@ def add_win_percentage(entire_schedule):
             win_loss.at[row['VISITOR'],'wins'] = win_loss.loc[row['VISITOR'],'wins'] + 1
             win_loss.at[row['HOME'],'losses'] = win_loss.loc[row['HOME'],'losses'] + 1
 
-    entire_schedule.insert(12, "HOME_W%", home_win_percentage, True)
-    entire_schedule.insert(13, "VISITOR_W%", visitor_win_percentage, True)
+    entire_schedule["HOME_W%"] = home_win_percentage
+    entire_schedule["VISITOR_W%"] = visitor_win_percentage
     return entire_schedule
+
+def add_home_away_splits(entire_schedule):
+    teams = [
+        'ATL','BRK','BOS','CHO','CHI','CLE','DAL','DEN',
+        'DET','GSW','HOU','IND','LAC','LAL','MEM','MIA', 
+        'MIL','MIN','NOP','NYK','OKC','ORL','PHI','PHO', 
+        'POR','SAC','SAS','TOR','UTA','WAS']
+    init = [0] * 30
+    data = {'home_wins' : init, 'home_losses' : init, 'road_wins': init, 'road_losses' : init}
+    home_road_split = pd.DataFrame(data, index=teams)
+    home_win_at_home = []
+    visitor_win_on_road = []
+    for index, row in entire_schedule.iterrows():
+        if (home_road_split.loc[row['HOME'], 'home_wins'] + home_road_split.loc[row['HOME'], 'home_losses']) == 0:
+            if home_road_split.loc[row['HOME'], 'home_wins'] > 0:
+                home_win_per = 1
+            else:
+                home_win_per = 0
+        else:
+            home_wins = home_road_split.loc[row['HOME'], 'home_wins']
+            home_win_per = home_wins / (home_road_split.loc[row['HOME'], 'home_wins'] + home_road_split.loc[row['HOME'], 'home_losses'])
+
+        if (home_road_split.loc[row['VISITOR'], 'road_wins'] + home_road_split.loc[row['VISITOR'], 'road_losses']) == 0:
+            if home_road_split.loc[row['VISITOR'], 'road_wins'] > 0:
+                visitor_win_per = 1
+            else:
+                visitor_win_per = 0
+        else:
+            visitor_wins = home_road_split.loc[row['VISITOR'], 'road_wins']
+            visitor_win_per = visitor_wins / (home_road_split.loc[row['VISITOR'], 'road_wins'] + home_road_split.loc[row['VISITOR'], 'road_losses'])
+
+        home_win_at_home.insert(index, home_win_per)
+        visitor_win_on_road.insert(index, visitor_win_per)
+
+        if row['WINNER'] == 1:
+            home_road_split.at[row['HOME'],'home_wins'] = home_road_split.loc[row['HOME'],'home_wins'] + 1
+            home_road_split.at[row['VISITOR'],'road_losses'] = home_road_split.loc[row['VISITOR'],'road_losses'] + 1
+        elif row['WINNER'] == 0:
+            home_road_split.at[row['VISITOR'],'road_wins'] = home_road_split.loc[row['VISITOR'],'road_wins'] + 1
+            home_road_split.at[row['HOME'],'home_losses'] = home_road_split.loc[row['HOME'],'home_losses'] + 1
+
+    entire_schedule['HOME_W%_AT_HOME'] = home_win_at_home
+    entire_schedule['VISITOR_W%_ON_ROAD'] = visitor_win_on_road
+    return entire_schedule
+
+def add_second_of_b2b(entire_schedule):
+    teams_that_played_last_night = []
+    teams_that_played_today = []
+    home_team_b2b = []
+    visitor_team_b2b = []
+    last_night_day = "Monday"
+
+    for index, row in entire_schedule.iterrows():
+        day = pd.Timestamp.day_name(row['DATE'])
+        
+        if get_next_day(last_night_day) != day:
+            teams_that_played_last_night = teams_that_played_today
+            teams_that_played_today = []
+            last_night_day = get_day_before(day)
+        
+        if get_next_day(last_night_day) == day:
+            if row['HOME'] in teams_that_played_last_night:
+                home_team_b2b.insert(index, 1)
+            else:
+                home_team_b2b.insert(index, 0)
+
+            if row['VISITOR'] in teams_that_played_last_night:
+                visitor_team_b2b.insert(index, 1)
+            else:
+                visitor_team_b2b.insert(index, 0)
+        
+        teams_that_played_today.append(row['HOME'])
+        teams_that_played_today.append(row['VISITOR'])
+
+    entire_schedule["HOME_B2B"] = home_team_b2b
+    entire_schedule["VISITOR_B2B"] = visitor_team_b2b
+    return entire_schedule
+
 
 
 entire_schedule = get_schedule(2020, playoffs=False)
 convert_team_names(entire_schedule)
 add_winner_column(entire_schedule)
 entire_schedule = add_win_percentage(add_team_stats(entire_schedule))
-entire_schedule.to_csv('season_2020.csv')
+entire_schedule = add_second_of_b2b(entire_schedule)
+entire_schedule = add_home_away_splits(entire_schedule)
+entire_schedule.to_csv('season_2020.csv', index=False)
 
 print("CSV file creation completed!")
