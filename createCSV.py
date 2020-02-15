@@ -1,9 +1,8 @@
-# TODO: Add last 10 to CSV
-
 from basketball_reference_scraper.teams import get_roster, get_team_stats, get_opp_stats, get_roster_stats, get_team_misc
 from basketball_reference_scraper.seasons import get_schedule
 from basketball_reference_scraper.box_scores import get_box_scores
 from utils import *
+import sys
 import pandas as pd
 import numpy as np
 pd.options.mode.chained_assignment = None
@@ -259,13 +258,17 @@ def add_last_five(entire_schedule):
     entire_schedule["VISITOR_LAST_5"] = visitor_last_five_percent
     return entire_schedule
 
-entire_schedule = get_schedule(2020, playoffs=False)
-convert_team_names(entire_schedule)
-add_winner_column(entire_schedule)
-entire_schedule = add_win_percentage(add_team_stats(entire_schedule))
-entire_schedule = add_second_of_b2b(entire_schedule)
-entire_schedule = add_home_away_splits(entire_schedule)
-entire_schedule = add_last_five(entire_schedule)
-entire_schedule.to_csv('season_2020.csv', index=False)
-
-print("CSV file creation completed!")
+def finalize_csv():
+    entire_schedule = get_schedule(2020, playoffs=False)
+    convert_team_names(entire_schedule)
+    add_winner_column(entire_schedule)
+    entire_schedule = add_win_percentage(add_team_stats(entire_schedule))
+    entire_schedule = add_second_of_b2b(entire_schedule)
+    entire_schedule = add_home_away_splits(entire_schedule)
+    entire_schedule = add_last_five(entire_schedule)
+    entire_schedule.to_csv('season_2020.csv', index=False)
+    
+    sys.stderr.write("[PROGRESS] CSV file creation completed!")
+    sys.stderr.flush()
+    
+    return "season_2020.csv"
