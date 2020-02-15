@@ -3,8 +3,9 @@
 from basketball_reference_scraper.teams import get_roster, get_team_stats, get_opp_stats, get_roster_stats, get_team_misc
 from basketball_reference_scraper.seasons import get_schedule
 from basketball_reference_scraper.box_scores import get_box_scores
-from utils import getTeamMisc
+from utils import *
 import pandas as pd
+import numpy as np
 pd.options.mode.chained_assignment = None
 
 def convert_team_names(entire_schedule):
@@ -57,7 +58,6 @@ def convert_team_names(entire_schedule):
     return entire_schedule
 
 def add_winner_column(entire_schedule):
-    import numpy as np
     winner = []
     for index, row in entire_schedule.iterrows():
         if np.isnan(row['HOME_PTS']) or np.isnan(row['VISITOR_PTS']):
@@ -229,7 +229,35 @@ def add_second_of_b2b(entire_schedule):
     entire_schedule["VISITOR_B2B"] = visitor_team_b2b
     return entire_schedule
 
+def add_last_five(entire_schedule):
+    team_last_five = get_teams_last_five_init()
+    home_last_five_percent = []
+    visitor_last_five_percent = []
+    for index, row in entire_schedule.iterrows():
 
+        home_last_five_percent.append(get_win_loss_percentage_last_five(row['HOME'], team_last_five))
+        visitor_last_five_percent.append(get_win_loss_percentage_last_five(row['VISITOR'], team_last_five))
+        
+        if not np.isnan(row['WINNER']):
+            temp_home = team_last_five[row['HOME']]
+            temp_home.pop(0)
+            temp_visitor = team_last_five[row['VISITOR']]
+            temp_visitor.pop(0)
+
+            if row['WINNER'] == 1:
+                temp_home.append('W')
+                temp_visitor.append('L')
+                team_last_five.update({row['HOME'] : temp_home})
+                team_last_five.update({row['VISITOR'] : temp_visitor})
+            elif row['WINNER'] == 0:
+                temp_home.append('L')
+                temp_visitor.append('W')
+                team_last_five.update({row['HOME'] : temp_home})
+                team_last_five.update({row['VISITOR'] : temp_visitor})
+
+    entire_schedule["HOME_LAST_5"] = home_last_five_percent
+    entire_schedule["VISITOR_LAST_5"] = visitor_last_five_percent
+    return entire_schedule
 
 entire_schedule = get_schedule(2020, playoffs=False)
 convert_team_names(entire_schedule)
@@ -237,6 +265,7 @@ add_winner_column(entire_schedule)
 entire_schedule = add_win_percentage(add_team_stats(entire_schedule))
 entire_schedule = add_second_of_b2b(entire_schedule)
 entire_schedule = add_home_away_splits(entire_schedule)
+entire_schedule = add_last_five(entire_schedule)
 entire_schedule.to_csv('season_2020.csv', index=False)
 
 print("CSV file creation completed!")
