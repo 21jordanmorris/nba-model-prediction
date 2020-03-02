@@ -9,6 +9,7 @@ verify_ssl = true
 basketball-reference-scraper = "==v1.0.4"
 scikit-learn = "*"
 tensorflow = "==2.0"
+matplotlib = "*"
 
 [requires]
 python_version = "3.7"

@@ -67,9 +67,7 @@ def convert_team_names(entire_schedule):
 def add_winner_column(entire_schedule):
     winner = []
     for index, row in entire_schedule.iterrows():
-        if np.isnan(row['HOME_PTS']) or np.isnan(row['VISITOR_PTS']):
-            winner.insert(index, float('Nan'))
-        elif row['HOME_PTS'] > row['VISITOR_PTS']:
+        if row['HOME_PTS'] > row['VISITOR_PTS']:
             winner.insert(index, 1)
         else:
             winner.insert(index, 0)
@@ -79,9 +77,9 @@ def add_winner_column(entire_schedule):
 # def add_injury_columns(entire_schedule):
 
 
-def add_team_stats(entire_schedule):
-    team_misc_2020 = getTeamMisc(2020)
-    team_misc_2019 = getTeamMisc(2019)
+def add_team_stats(entire_schedule, year):
+    team_misc_2020 = getTeamMisc(year)
+    team_misc_2019 = getTeamMisc(year - 1)
     last_year_win_percentage_home = []
     last_year_win_percentage_visitor = []
     count = 1
@@ -275,13 +273,15 @@ def finalize_csv(name, year):
     entire_schedule = get_schedule(year, playoffs=False)
     convert_team_names(entire_schedule)
     add_winner_column(entire_schedule)
-    entire_schedule = add_win_percentage(add_team_stats(entire_schedule))
+    entire_schedule = add_win_percentage(add_team_stats(entire_schedule, year))
     entire_schedule = add_second_of_b2b(entire_schedule)
     entire_schedule = add_home_away_splits(entire_schedule)
     entire_schedule = add_last_twenty(entire_schedule)
     entire_schedule.to_csv(name, index=False)
     
-    sys.stderr.write("[PROGRESS] CSV file creation completed!\n")
+    sys.stderr.write("[PROGRESS] CSV file creation completed!")
     sys.stderr.flush()
     
     return name
+
+finalize_csv("season_2017.csv", 2017)

@@ -70,8 +70,8 @@ def get_day_before(day):
     elif day == "Sunday":
         return "Saturday"
 
-def get_teams_last_five_init():
-    how_many_games = [0] * 5
+def get_teams_last_twenty_init():
+    how_many_games = [0] * 20
     teams = [
         'ATL','BRK','BOS','CHO','CHI','CLE','DAL','DEN',
         'DET','GSW','HOU','IND','LAC','LAL','MEM','MIA', 
@@ -81,10 +81,10 @@ def get_teams_last_five_init():
     
     return teams_last
 
-def get_win_loss_percentage_last_five(team, team_dict):
-    current_last_five = team_dict[team]
-    wins = current_last_five.count('W')
-    losses = current_last_five.count('L')
+def get_win_loss_percentage_last_twenty(team, team_dict):
+    current_last_twenty = team_dict[team]
+    wins = current_last_twenty.count('W')
+    losses = current_last_twenty.count('L')
     if losses == 0:
         if wins > 0:
             return 1
